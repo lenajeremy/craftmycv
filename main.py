@@ -4,8 +4,8 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
-from sqlapp import models, schemas #crud
-from sqlapp.database import SessionLocal, engine
+from database import models, schemas #crud
+from database.setup import SessionLocal, engine
 
 models.Base.metadata.create_all(bind=engine)
 
