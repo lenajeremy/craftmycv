@@ -1,5 +1,9 @@
 from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON, Float, Integer
+from sqlalchemy_utils import ChoiceType
 from sqlalchemy.orm import relationship
+from uuid import uuid4
+import random
+import string
 
 from .setup import Base
 
@@ -7,19 +11,41 @@ from .setup import Base
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID, primary_key=True, unique=True)
+    id = Column(UUID, primary_key=True, unique=True, default=uuid4)
+    name = Column(String, default="")
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=False)
     plan = Column(UUID, ForeignKey("plans.id"))
     resumes = relationship("Resume", back_populates="owner")
+    auth_sessions = relationship("AuthSession", back_populates="user")
 
+
+def random_session_key():
+    letters = string.ascii_letters + string.digits
+    return ''.join(random.choice(letters) for i in range(16))
+
+
+class AuthSession(Base):
+
+    SESSION_TYPES = [
+        ("email_login", "Email Login Session"),
+        ("email_validation", "Email Validation Session"),
+        ("password_reset", "Reset Password Session")
+    ]
+
+    __tablename__ = "auth_sessions"
+    id = Column(UUID, primary_key=True, unique=True, default=uuid4)
+    user = relationship("User", back_populates="auth_sessions")
+    user_id = Column(UUID, ForeignKey("users.id"))
+    key = Column(String, nullable=False, default=random_session_key)
+    type = Column(ChoiceType(SESSION_TYPES))
 
 
 class Plan(Base):
     __tablename__ = "plans"
     
-    id = Column(UUID, primary_key=True, unique=True)
+    id = Column(UUID, primary_key=True, unique=True, default=uuid4)
     title = Column(String, unique=True)
     description = Column(String)
     price_in_dollars = Column(Float)
@@ -29,7 +55,7 @@ class Plan(Base):
 class Template(Base):
     __tablename__ = "templates"
 
-    id = Column(UUID, primary_key=True)
+    id = Column(UUID, primary_key=True, default=uuid4)
     file_url = Column(String, unique=True, index=True)
     image_url = Column(String, index = True)
     date_created = Column(DateTime)
@@ -65,7 +91,7 @@ class Resume(Base):
         }
     """
 
-    id = Column(UUID, primary_key=True)
+    id = Column(UUID, primary_key=True, default=uuid4)
     owner_id = Column(UUID, ForeignKey("users.id"))
     owner = relationship("User", back_populates="resumes")
     resume = Column(UUID, ForeignKey("templates.id"))
