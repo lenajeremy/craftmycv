@@ -1,5 +1,5 @@
 from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON, Float, Integer
-#from sqlalchemy_utils import ChoiceType
+from sqlalchemy_utils import ChoiceType
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 import random

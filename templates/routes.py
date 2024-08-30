@@ -6,7 +6,7 @@ from firebase_admin import storage
 from database.models import Template, Resume
 from datetime import datetime
 from utils.response import respond_error, respond_success
-from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 from database import schemas
 
 
@@ -91,13 +91,15 @@ def delete_template(template_id: str):
     """
     Endpoint to delete a template by its ID.
     """
+
+    session = SessionLocal()
     try:
         # Query the template by ID
-        template = db.query(Template).filter_by(id=template_id).one()
+        template = session.query(Template).filter_by(id=template_id).one()
 
         # Delete the template
-        db.delete(template)
-        db.commit()
+        session.delete(template)
+        session.commit()
         
     except NoResultFound:
         # Raise a 404 error if the template does not exist
