@@ -3,10 +3,11 @@ from fastapi.responses import JSONResponse
 from uuid import uuid4
 from database.setup import SessionLocal
 from firebase_admin import storage
-from database.models import Template
+from database.models import Template, Resume
 from datetime import datetime
 from utils.response import respond_error, respond_success
 from sqlalchemy import select
+from database import schemas
 
 
 templatesrouter = APIRouter(prefix="/templates",tags=["templates"])
@@ -104,3 +105,24 @@ def delete_template(template_id: str):
     
     # 204 status code implies successful deletion with no content
     return None
+
+@templatesrouter.post("/resume/create")
+def create_resume(request: schemas.Resume):
+    """
+    Create a resume
+    owner_id = Column(UUID, ForeignKey("users.id"))
+    owner = relationship("User", back_populates="resumes")
+    template = Column(UUID, ForeignKey("templates.id"))
+    """
+
+    session = SessionLocal()
+
+    new_resume= Resume(
+            owner_id = request.owner_id,
+            owner = request.owner,
+            template_id = request.template_id
+    )
+    session.add(new_resume)
+    session.commit()
+    session.refresh(new_resume)
+    return new_resume

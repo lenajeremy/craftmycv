@@ -33,3 +33,26 @@ class User(UserBase):
 
     class Config:
         orm_mode = True
+    
+
+
+
+
+
+
+class ResumeBase(BaseModel):
+    pass
+
+
+class ResumeCreate(ResumeBase):
+    pass
+
+
+class Resume(ResumeBase):
+    id: int
+    owner_id : str
+    owner : str
+    template_id : str
+
+    class Config:
+        orm_mode = True

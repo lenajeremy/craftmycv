@@ -1,5 +1,5 @@
 from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON, Float, Integer
-from sqlalchemy_utils import ChoiceType
+#from sqlalchemy_utils import ChoiceType
 from sqlalchemy.orm import relationship
 from uuid import uuid4
 import random
@@ -94,7 +94,7 @@ class Resume(Base):
     id = Column(UUID, primary_key=True, default=uuid4)
     owner_id = Column(UUID, ForeignKey("users.id"))
     owner = relationship("User", back_populates="resumes")
-    resume = Column(UUID, ForeignKey("templates.id"))
+    template_id = Column(UUID, ForeignKey("templates.id"))
 
     download_count = Column(Integer, default=0)
     first_name = Column(String)

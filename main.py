@@ -26,7 +26,7 @@ cred = credentials.Certificate("craftmycv-2bf02-firebase-adminsdk-jfdby-534ef676
 
 firebase_config =  {
   "storageBucket": "craftmycv-2bf02.appspot.com",
-};
+}
 
 fb_app = initialize_app(cred, firebase_config)
 
