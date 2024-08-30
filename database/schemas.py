@@ -50,7 +50,6 @@ class ResumeCreate(ResumeBase):
 
 class Resume(ResumeBase):
     owner_id : str
-    owner : str
     template_id : str
 
     class Config:

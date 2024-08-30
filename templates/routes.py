@@ -108,7 +108,8 @@ def delete_template(template_id: str):
     # 204 status code implies successful deletion with no content
     return None
 
-@templatesrouter.post("/resume/create")
+
+@templatesrouter.post("/resume/create", response_class=JSONResponse)
 def create_resume(request: schemas.Resume):
     """
     Create a resume
@@ -117,15 +118,20 @@ def create_resume(request: schemas.Resume):
     template = Column(UUID, ForeignKey("templates.id"))
     """
 
-    session = SessionLocal()
+    try:
+        session = SessionLocal()
 
+        new_resume= Resume(
+            owner_id = request.owner_id,
+            template_id = request.template_id
+        )
+        
+        session.add(new_resume)
+        session.commit()
+        session.refresh(new_resume)
 
-    new_resume= Resume(
-        owner_id = request.owner_id,
-        owner = request.owner,
-        template_id = request.template_id
-    )
-    session.add(new_resume)
-    session.commit()
-    session.refresh(new_resume)
-    return new_resume
+        return respond_success({
+                "resume_id": str(new_resume.id),
+            }, "Resume created successfully")
+    except Exception as e:
+        return JSONResponse(respond_error(e), status_code=500)
