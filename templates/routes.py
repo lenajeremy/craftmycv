@@ -113,9 +113,6 @@ def delete_template(template_id: str):
 def create_resume(request: schemas.Resume):
     """
     Create a resume
-    owner_id = Column(UUID, ForeignKey("users.id"))
-    owner = relationship("User", back_populates="resumes")
-    template = Column(UUID, ForeignKey("templates.id"))
     """
 
     try:
@@ -133,5 +130,26 @@ def create_resume(request: schemas.Resume):
         return respond_success({
                 "resume_id": str(new_resume.id),
             }, "Resume created successfully")
+    except Exception as e:
+        return JSONResponse(respond_error(e), status_code=500)
+    
+
+@templatesrouter.patch("/resume/edit", response_class=JSONResponse)
+def edit_resume(request: schemas.ResumeEdit):
+    """
+    Edit a resume
+    """
+
+    try:
+        session = SessionLocal()
+        resume= session.query(Resume).filter_by(id=request.id).first()
+        print(resume)
+        for key, value in request.dict(exclude_unset=True).items():
+            setattr(resume, key, value)
+
+        session.commit()
+
+
+        return respond_success(request.dict(), "Resume edited successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)

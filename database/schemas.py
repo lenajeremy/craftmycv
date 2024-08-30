@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class ItemBase(BaseModel):
     title: str
-    description: str #| None = None
+    description: str #| None : None
 
 
 class ItemCreate(ItemBase):
@@ -15,7 +15,7 @@ class Item(ItemBase):
     owner_id: int
 
     class Config:
-        orm_mode = True
+        orm_mode : True
 
 
 class UserBase(BaseModel):
@@ -32,11 +32,8 @@ class User(UserBase):
     items: list[Item] = []
 
     class Config:
-        orm_mode = True
+        orm_mode : True
     
-
-
-
 
 
 
@@ -53,4 +50,21 @@ class Resume(ResumeBase):
     template_id : str
 
     class Config:
-        orm_mode = True
+        orm_mode : True
+
+class ResumeEdit(ResumeBase):
+    id : str
+    download_count : int
+    first_name : str
+    last_name : str
+    address : str
+    email : str
+    phone_number : str
+    role : str
+    description : str
+    experiences : str # was Column(JSON)
+    tools : str # was Column(JSON)
+    others : str# was Column(JSON)
+
+    class Config:
+        orm_mode : True
