@@ -60,6 +60,7 @@ class Template(Base):
     image_url = Column(String, index = True)
     date_created = Column(DateTime)
     usage_count = Column(Integer)
+    resumes= relationship('Resume', back_populates='template')
 
 
 class Resume(Base):
@@ -94,6 +95,7 @@ class Resume(Base):
     id = Column(UUID, primary_key=True, default=uuid4)
     owner_id = Column(UUID, ForeignKey("users.id"))
     owner = relationship("User", back_populates="resumes")
+    template = relationship("Template", back_populates="resumes")
     template_id = Column(UUID, ForeignKey("templates.id"))
 
     download_count = Column(Integer, default=0)

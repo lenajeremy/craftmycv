@@ -119,10 +119,11 @@ def create_resume(request: schemas.Resume):
 
     session = SessionLocal()
 
+
     new_resume= Resume(
-            owner_id = request.owner_id,
-            owner = request.owner,
-            template_id = request.template_id
+        owner_id = request.owner_id,
+        owner = request.owner,
+        template_id = request.template_id
     )
     session.add(new_resume)
     session.commit()
