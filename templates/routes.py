@@ -153,3 +153,39 @@ def edit_resume(request: schemas.ResumeEdit):
         return respond_success(request.dict(), "Resume edited successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
+
+
+
+@templatesrouter.post("/ai/generate", response_class=JSONResponse)
+def generate_resume(request: schemas.Resume):
+    # request.field  = 'profile_summary'
+    # request.field = 'workexperience_summary'
+    # request.field = 'education_summary'
+    # request.field = 'skills_summary'
+    # request.field = 'certifications_summary'
+    # request.field = 'languages_summary'
+    # request.field = 'interests_summary'
+    # request.field = 'achievements_summary'
+    # request.field = 'projects_summary'
+    # request.field = 'publications_summary'
+    # request.field = 'honors_summary'
+
+    prompts = {
+        "profile_summary": "Create a profile summary for the resume for a {request.role} in {request.industry} with the following skills: {requst.skillsdetails}",
+        "workexperience_summary": "Create a work experience summary for the resume",
+        "education_summary": "Create a education summary for the resume",
+        "skills_summary": "Create a skills summary for the resume",
+        "certifications_summary": "Create a certifications summary for the resume",
+        "languages_summary": "Create a languages summary for the resume",
+        "interests_summary": "Create a interests summary for the resume",
+        "achievements_summary": "Create a achievements summary for the resume",
+        "projects_summary": "Create a projects summary for the resume",
+    }
+
+    # get data from frontend
+    # generate prompt
+    # send to openai
+    # get response
+    # return response
+
+    return respond_success(request.dict(), "Resume generated successfully")

@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from utils.response import respond_error, respond_success
@@ -7,10 +7,47 @@ from database.models import User, Plan, AuthSession
 from database.setup import SessionLocal
 from sqlalchemy import update
 import bcrypt
+from jose import JWTError, jwt
+from datetime import datetime, timedelta
+from fastapi.security import OAuth2PasswordBearer
 
-
+SECRET_KEY = "your_secret_key"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 authrouter = APIRouter(prefix="/auth",tags=["auth"])
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_access_token(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("email")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    with SessionLocal() as session:
+        user = session.query(User).filter_by(email=email).first()
+        if not user:
+            raise credentials_exception
+        return user
+
 
 class LoginBody(BaseModel):
      email: str
@@ -24,8 +61,10 @@ class RegisterBody(BaseModel):
     name: str
     accept_t_and_c: bool
 
+
 @authrouter.post("/login", tags=["auth"], response_class=JSONResponse)
 def login(body: LoginBody):
+    print(body)
 
     with SessionLocal() as session:
         user = session.query(User).filter_by(email=body.email).first()
@@ -34,9 +73,17 @@ def login(body: LoginBody):
         
         if bcrypt.checkpw(body.password.encode('utf-8'), user.hashed_password.encode('utf-8')):
             if user.is_active:
-                # generate jwt token
+                access_token = create_access_token(data={"email": user.email})
+                # get plan name for plan id
+                plan = session.query(Plan).filter_by(id=user.plan).first()
+
                 return JSONResponse(respond_success({
-                    "token": "random token",
+                    "token": access_token,
+                    "user_id": str(user.id),
+                    "name": user.name,
+                    "email": user.email,
+                    "plan": plan.title,
+                    "is_active": user.is_active,
                 }, "Logged in successfully"))
             else:
                 send_mail(user.name, user.email, "Activate account to login", "Click this link to activate your account", "Click this link to activate your account")
@@ -47,7 +94,8 @@ def login(body: LoginBody):
     
 
 @authrouter.post("/register", tags=["auth"], response_class=JSONResponse)
-def register(body: RegisterBody):
+async def register(body: RegisterBody, request: Request):
+    base_url = str(request.base_url)
     if not body.accept_t_and_c:
         return respond_error("User needs to accept terms and conditions")
     else:
@@ -78,7 +126,12 @@ def register(body: RegisterBody):
 
                 print(authsession.key)
 
-             res: str = send_mail(body.name, body.email, "Welcome to CraftMyCV.", f"this is to welcome you to craft my cv <button><a href = \"http://localhost:8000/auth/verify-email/{authsession.key}\">click to verify email</a></button>", f'this is to welcome you to craft my cv. Link: http://localhost:8000/auth/verify-email/{authsession.key}')
+                verification_link = f"{base_url}auth/verify-email/{authsession.key}"
+
+                html_content = f"Welcome to CraftMyCV. <a href='{verification_link}'>Click here to verify your email</a>"
+                plain_text = f"Welcome to CraftMyCV. Verify your email at: {verification_link}"
+
+                res: str = send_mail(body.name, body.email, "Welcome to CraftMyCV.", html_content, plain_text)
              if res.find("20") != -1:
                   return JSONResponse(respond_success(200, "Registration completed. Please verify your email"))
              else:
@@ -103,13 +156,7 @@ def verify_email(token: str):
                 return JSONResponse(respond_success(None, "Email verified successfully"))
            except Exception as e:
                 return JSONResponse(respond_error("error validating token"))
-
-           
-       
-       
-       
-
-
+   
 import re
 def is_valid_email(email):
   return bool(re.search(r"^[\w\.\+\-]+\@[\w]+\.[a-z]{2,3}$", email))
