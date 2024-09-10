@@ -64,10 +64,25 @@ def create_resume(request: schemas.Resume):
 
         return respond_success({
                 "resume_id": str(new_resume.id),
+                "resume_name": new_resume.name,
             }, "Resume created successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
     
+
+@resumesrouter.get("/{resume_id}", response_class=JSONResponse)
+def get_resume(resume_id: str):
+    """
+    Get a resume by id
+    """
+
+    try:
+        session = SessionLocal()
+        resume = session.query(Resume).filter_by(id=resume_id).first()
+
+        return respond_success(resume, "Resume fetched successfully")
+    except Exception as e:
+        return JSONResponse(respond_error(e), status_code=500)
 
 @resumesrouter.patch("/{resume_id}/edit", response_class=JSONResponse)
 def edit_resume(resume_id: str, request: schemas.ResumeEdit):
@@ -84,11 +99,33 @@ def edit_resume(resume_id: str, request: schemas.ResumeEdit):
 
         session.commit()
         session.refresh(resume)
-        
+
         return respond_success(resume, "Resume edited successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
 
+
+@resumesrouter.delete("/{resume_id}/delete", response_class=JSONResponse)
+def delete_resume(resume_id: str):
+    """
+    Delete an existing resume
+    """
+
+    try:
+        session = SessionLocal()
+
+        resume = session.query(Resume).filter_by(id=resume_id).first()
+        template = session.query(Template).filter_by(id=resume.template_id).first()
+
+        template.usage_count -= 1
+
+        session.delete(resume)
+        session.commit()
+        session.refresh(template)
+
+        return respond_success(None, "Resume deleted successfully")
+    except Exception as e:
+        return JSONResponse(respond_error(e), status_code=500)
 
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
