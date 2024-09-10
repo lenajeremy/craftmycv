@@ -67,7 +67,6 @@ class Education(BaseModel):
     description: Optional[str] = None
 
 class ResumeEdit(BaseModel):
-    id: Optional[str] = None
     owner_id: Optional[str] = None
     template_id: Optional[str] = None
     download_count: Optional[int] = None

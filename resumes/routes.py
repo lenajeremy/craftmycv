@@ -4,11 +4,35 @@ from database import schemas
 from database.models import Resume, Template
 from database.setup import SessionLocal
 from utils.response import respond_error, respond_success
+from sqlalchemy.exc import SQLAlchemyError
 
 resumesrouter = APIRouter(
     prefix="/resumes",
     tags=["resumes"]
 )
+
+
+@resumesrouter.get('/user/{user_id}', response_class=JSONResponse)
+def get_user_resumes(user_id: str):
+    """
+    Get all resumes for a user
+    """
+    session = SessionLocal()
+    try:
+        resumes = session.query(Resume).filter_by(owner_id=user_id).all()
+        formatted_resumes = [{
+            "id": resume.id, 
+            "name": resume.name, 
+            "created_at": resume.created_at, 
+            "updated_at": resume.updated_at
+        } for resume in resumes]
+
+        return respond_success(formatted_resumes, "Resumes fetched successfully")
+    except SQLAlchemyError as e:
+        return JSONResponse(respond_error(str(e)), status_code=500)
+    finally:
+        session.close()
+
 
 @resumesrouter.post("/new", response_class=JSONResponse)
 def create_resume(request: schemas.Resume):
@@ -28,7 +52,6 @@ def create_resume(request: schemas.Resume):
         template = session.query(Template).filter_by(id=request.template_id).first()
         template.usage_count += 1
 
-        new_resume.name = template.name
         new_resume.description = template.description
         new_resume.image_url = template.image_url
 
@@ -38,7 +61,7 @@ def create_resume(request: schemas.Resume):
         session.commit()
         session.refresh(new_resume)
         session.refresh(template)
-        
+
         return respond_success({
                 "resume_id": str(new_resume.id),
             }, "Resume created successfully")
@@ -54,15 +77,15 @@ def edit_resume(resume_id: str, request: schemas.ResumeEdit):
 
     try:
         session = SessionLocal()
-        resume= session.query(Resume).filter_by(id=request.id).first()
-        print(resume)
+        resume = session.query(Resume).filter_by(id=resume_id).first()
+
         for key, value in request.dict(exclude_unset=True).items():
             setattr(resume, key, value)
 
         session.commit()
-
-
-        return respond_success(request.dict(), "Resume edited successfully")
+        session.refresh(resume)
+        
+        return respond_success(resume, "Resume edited successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
 

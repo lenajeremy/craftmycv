@@ -2,6 +2,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON
 from sqlalchemy_utils import ChoiceType
 from sqlalchemy.orm import relationship
 from uuid import uuid4
+from datetime import datetime
 import random
 import string
 
@@ -99,6 +100,9 @@ class Resume(Base):
     owner = relationship("User", back_populates="resumes")
     template = relationship("Template", back_populates="resumes")
     template_id = Column(UUID, ForeignKey("templates.id"))
+    created_at = Column(DateTime, default=datetime.now())
+    updated_at = Column(DateTime, default=datetime.now(), onupdate=datetime.now())
+    name = Column(String, default="Untitled Resume")
 
     download_count = Column(Integer, default=0)
     first_name = Column(String)
