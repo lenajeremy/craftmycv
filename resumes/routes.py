@@ -90,6 +90,8 @@ def edit_resume(resume_id: str, request: schemas.ResumeEdit):
     Edit an existing resume --- puts in required fields
     """
 
+    print(request)
+
     try:
         session = SessionLocal()
         resume = session.query(Resume).filter_by(id=resume_id).first()

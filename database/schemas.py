@@ -53,12 +53,6 @@ class Resume(ResumeBase):
     class Config:
         orm_mode : True
 
-class Experience(BaseModel):
-    company: str
-    work_done: str
-    start_date: str
-    end_date: str
-
 class Education(BaseModel):
     school: str
     degree: str
@@ -66,10 +60,17 @@ class Education(BaseModel):
     end_date: str
     description: Optional[str] = None
 
+class Experience(BaseModel):
+    id: str
+    company: Optional[str] = None
+    location: Optional[str] = None
+    responsibilities: Optional[str] = None
+    role: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+
 class ResumeEdit(BaseModel):
-    owner_id: Optional[str] = None
-    template_id: Optional[str] = None
-    download_count: Optional[int] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     address: Optional[str] = None
@@ -84,9 +85,3 @@ class ResumeEdit(BaseModel):
 
     class Config:
         orm_mode = True
-
-class Experience(BaseModel):
-    company: str
-    work_done: str
-    start_date: str
-    end_date: str

@@ -124,4 +124,5 @@ class Resume(Base):
     experiences = Column(JSON)
     tools = Column(JSON)
     others = Column(JSON)
+    education = Column(JSON)
 
