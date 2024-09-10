@@ -44,7 +44,7 @@ class AuthSession(Base):
 
 class Plan(Base):
     __tablename__ = "plans"
-    
+
     id = Column(UUID, primary_key=True, unique=True, default=uuid4)
     title = Column(String, unique=True)
     description = Column(String)
@@ -58,6 +58,8 @@ class Template(Base):
     id = Column(UUID, primary_key=True, default=uuid4)
     file_url = Column(String, unique=True, index=True)
     image_url = Column(String, index = True)
+    name = Column(String)
+    description = Column(String)
     date_created = Column(DateTime)
     usage_count = Column(Integer)
     resumes= relationship('Resume', back_populates='template')

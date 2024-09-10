@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
+from fastapi import APIRouter, Form, UploadFile, File, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from uuid import uuid4
 from database.setup import SessionLocal
@@ -8,12 +8,14 @@ from datetime import datetime
 from utils.response import respond_error, respond_success
 from sqlalchemy.exc import NoResultFound
 from database import schemas
+from auth.routes import  get_current_user
+from database.models import User
 
 
 templatesrouter = APIRouter(prefix="/templates",tags=["templates"])
 
 @templatesrouter.post('/upload', response_class=JSONResponse)
-def upload_template(image: UploadFile = File(...), docx_file: UploadFile = File(...)):
+def upload_template(image: UploadFile = File(...), docx_file: UploadFile = File(...), template_name: str = Form(...), template_description: str = Form(...)):
     """
     Endpoint to upload templates
     """
@@ -29,16 +31,20 @@ def upload_template(image: UploadFile = File(...), docx_file: UploadFile = File(
         # Upload image to Firebase Storage
         image_blob = storage.bucket().blob(image_path)
         image_blob.upload_from_file(image.file, content_type=image.content_type)
+        image_blob.make_public()
         image_url = image_blob.public_url
 
         # Upload docx file to Firebase Storage
         docx_blob = storage.bucket().blob(docx_path)
         docx_blob.upload_from_file(docx_file.file, content_type=docx_file.content_type)
+        docx_blob.make_public()
         docx_url = docx_blob.public_url
 
         # Save the template information in the database
         new_template = Template(
             id=template_id,
+            name=template_name,
+            description=template_description,
             file_url=docx_url,
             image_url=image_url,
             date_created=datetime.now(),
@@ -109,83 +115,3 @@ def delete_template(template_id: str):
     return None
 
 
-@templatesrouter.post("/resume/create", response_class=JSONResponse)
-def create_resume(request: schemas.Resume):
-    """
-    Create a resume
-    """
-
-    try:
-        session = SessionLocal()
-
-        new_resume= Resume(
-            owner_id = request.owner_id,
-            template_id = request.template_id
-        )
-        
-        session.add(new_resume)
-        session.commit()
-        session.refresh(new_resume)
-
-        return respond_success({
-                "resume_id": str(new_resume.id),
-            }, "Resume created successfully")
-    except Exception as e:
-        return JSONResponse(respond_error(e), status_code=500)
-    
-
-@templatesrouter.patch("/resume/edit", response_class=JSONResponse)
-def edit_resume(request: schemas.ResumeEdit):
-    """
-    Edit a resume
-    """
-
-    try:
-        session = SessionLocal()
-        resume= session.query(Resume).filter_by(id=request.id).first()
-        print(resume)
-        for key, value in request.dict(exclude_unset=True).items():
-            setattr(resume, key, value)
-
-        session.commit()
-
-
-        return respond_success(request.dict(), "Resume edited successfully")
-    except Exception as e:
-        return JSONResponse(respond_error(e), status_code=500)
-
-
-
-@templatesrouter.post("/ai/generate", response_class=JSONResponse)
-def generate_resume(request: schemas.Resume):
-    # request.field  = 'profile_summary'
-    # request.field = 'workexperience_summary'
-    # request.field = 'education_summary'
-    # request.field = 'skills_summary'
-    # request.field = 'certifications_summary'
-    # request.field = 'languages_summary'
-    # request.field = 'interests_summary'
-    # request.field = 'achievements_summary'
-    # request.field = 'projects_summary'
-    # request.field = 'publications_summary'
-    # request.field = 'honors_summary'
-
-    prompts = {
-        "profile_summary": "Create a profile summary for the resume for a {request.role} in {request.industry} with the following skills: {requst.skillsdetails}",
-        "workexperience_summary": "Create a work experience summary for the resume",
-        "education_summary": "Create a education summary for the resume",
-        "skills_summary": "Create a skills summary for the resume",
-        "certifications_summary": "Create a certifications summary for the resume",
-        "languages_summary": "Create a languages summary for the resume",
-        "interests_summary": "Create a interests summary for the resume",
-        "achievements_summary": "Create a achievements summary for the resume",
-        "projects_summary": "Create a projects summary for the resume",
-    }
-
-    # get data from frontend
-    # generate prompt
-    # send to openai
-    # get response
-    # return response
-
-    return respond_success(request.dict(), "Resume generated successfully")

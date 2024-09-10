@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-
+from typing import Optional, List
+from datetime import datetime
 
 class ItemBase(BaseModel):
     title: str
@@ -52,19 +53,41 @@ class Resume(ResumeBase):
     class Config:
         orm_mode : True
 
-class ResumeEdit(ResumeBase):
-    id : str
-    download_count : int
-    first_name : str
-    last_name : str
-    address : str
-    email : str
-    phone_number : str
-    role : str
-    description : str
-    experiences : str # was Column(JSON)
-    tools : str # was Column(JSON)
-    others : str# was Column(JSON)
+class Experience(BaseModel):
+    company: str
+    work_done: str
+    start_date: str
+    end_date: str
+
+class Education(BaseModel):
+    school: str
+    degree: str
+    start_date: str
+    end_date: str
+    description: Optional[str] = None
+
+class ResumeEdit(BaseModel):
+    id: Optional[str] = None
+    owner_id: Optional[str] = None
+    template_id: Optional[str] = None
+    download_count: Optional[int] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    address: Optional[str] = None
+    email: Optional[str] = None
+    phone_number: Optional[str] = None
+    role: Optional[str] = None
+    description: Optional[str] = None
+    experiences: Optional[List[Experience]] = None
+    tools: Optional[List[str]] = None
+    education: Optional[List[Education]] = None
+    others: Optional[dict] = None
 
     class Config:
-        orm_mode : True
+        orm_mode = True
+
+class Experience(BaseModel):
+    company: str
+    work_done: str
+    start_date: str
+    end_date: str
