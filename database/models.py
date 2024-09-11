@@ -1,10 +1,12 @@
-from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON, Float, Integer
-from sqlalchemy_utils import ChoiceType
-from sqlalchemy.orm import relationship
+"""Database models for the application."""
 from uuid import uuid4
 import random
 import string
+
+from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON, Float, Integer
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy_utils import ChoiceType
 
 from .setup import Base
 
@@ -21,6 +23,7 @@ class User(Base):
     plan = relationship("Plan", back_populates="users")
     resumes = relationship("Resume", back_populates="owner")
     auth_sessions = relationship("AuthSession", back_populates="user")
+    subscriptions = relationship("Subscription", back_populates="user")
 
 
 def random_session_key():
@@ -49,10 +52,24 @@ class Plan(Base):
 
     id = Column(UUID, primary_key=True, unique=True, default=uuid4)
     title = Column(String, unique=True)
-    description = Column(String)
+    description = Column(JSON, default=[])
+    duration_in_months = Column(Integer)
     price_in_dollars = Column(Float)
     users = relationship("User", back_populates="plan")
+    subscriptions = relationship("Subscription", back_populates="plan")
+    
+class Subscription(Base):
+    __tablename__ = "subscriptions"
 
+    id = Column(UUID, primary_key=True, unique=True, default=uuid4)
+    user_id = Column(UUID, ForeignKey("users.id"))
+    plan_id = Column(UUID, ForeignKey("plans.id"))
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    
+    user = relationship("User", back_populates="subscriptions")
+    plan = relationship("Plan", back_populates="subscriptions")
+    
 
 class Template(Base):
     __tablename__ = "templates"
@@ -127,4 +144,7 @@ class Resume(Base):
     others = Column(JSON)
     education = Column(JSON)
     professional_summary = Column(String)
+
+
+
 

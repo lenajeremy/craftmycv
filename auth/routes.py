@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from utils.response import respond_error, respond_success
 from mails.send_mail import send_mail
-from database.models import User, Plan, AuthSession
+from database.models import Subscription, User, Plan, AuthSession
 from database.setup import SessionLocal
 from sqlalchemy import update
 import bcrypt
@@ -13,7 +13,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
 authrouter = APIRouter(prefix="/auth",tags=["auth"])
 
@@ -77,17 +77,19 @@ def login(body: LoginBody):
         if bcrypt.checkpw(body.password.encode('utf-8'), user.hashed_password.encode('utf-8')):
             if user.is_active:
                 access_token = create_access_token(data={"email": user.email})
-                # get plan name for plan id
-                plan = session.query(Plan).filter_by(id=user.plan_id).first()
+                active_subscription = session.query(Subscription).filter(Subscription.user_id == user.id, Subscription.end_date > datetime.now()).first()
+                plan = active_subscription.plan if active_subscription else None
 
                 return JSONResponse(respond_success({
                     "token": access_token,
                     "user_id": str(user.id),
                     "name": user.name,
                     "email": user.email,
-                    "plan": plan.title,
+                    "plan": plan.title if plan else "No Plan (FREE)",
                     "is_active": user.is_active,
+                    "has_valid_subscription": active_subscription is not None,
                 }, "Logged in successfully"))
+            
             else:
                 send_mail(user.name, user.email, "Activate account to login", "Click this link to activate your account", "Click this link to activate your account")
                 return JSONResponse(respond_success(None, "Please activate your account. A mail has been sent to your email address"))
@@ -113,21 +115,14 @@ async def register(body: RegisterBody, request: Request):
         if len(errors) > 0:
              return JSONResponse(respond_error(error=errors), status_code=400)
         else:
-             with SessionLocal() as session:
-                plan = session.query(Plan).filter_by(title = "Free Plan").first()
-                if not plan:
-                    print("Free plan does not exist in database")
-                    return JSONResponse(respond_error("Internal Server error"), status_code=500)
-                
+             with SessionLocal() as session:                
                 password_hash = bcrypt.hashpw(body.password.encode('utf-8'), bcrypt.gensalt())
-                user = User(name = body.name, email = body.email, hashed_password = password_hash.decode(), plan=plan)
+                user = User(name = body.name, email = body.email, hashed_password = password_hash.decode())
                 authsession = AuthSession(type = "email_validation", user = user)
 
                 session.add(user)
                 session.add(authsession)
                 session.commit()
-
-                print(authsession.key)
 
                 verification_link = f"{base_url}auth/verify-email/{authsession.key}"
 

@@ -1,4 +1,5 @@
 from auth.routes import authrouter
+from subscription.routes import subscription_router
 from templates.routes import templatesrouter
 from resumes.routes import resumesrouter
 from user.routes import userrouter
@@ -14,6 +15,7 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 app.include_router(authrouter)
+app.include_router(subscription_router)
 app.include_router(templatesrouter)
 app.include_router(resumesrouter)
 app.include_router(userrouter)
@@ -38,8 +40,45 @@ fb_app = initialize_app(cred, firebase_config)
 
 
 # session = SessionLocal()
-# free_plan = models.Plan(title = "Free Plan", description = "Free forever. Allows you to create only one resume", price_in_dollars = 0)
+free_plan = models.Plan(
+    title = "Free Plan", 
+    description = [
+        "Access to a limited selection of simple, professional resume templates.",
+        "Create and save up to 1 resume.",
+        "Generate professional summaries and job descriptions using basic AI-powered suggestions.",
+        "Export resumes as a PDF.",
+    ],
+    duration_in_months = 999999,
+    price_in_dollars = 0
+)
+
+pro_plan = models.Plan(
+    title = "Pro Plan",
+    description = [
+        "Access to a broader selection of modern and industry-specific templates.",
+        "Create, save, and manage up to 5 resumes.",
+        "AI-powered suggestions for bullet points, skills, and professional summaries tailored to specific industries.",
+        "Export resumes in PDF, Word, and TXT formats.",
+    ],
+    duration_in_months = 1,
+    price_in_dollars = 9.99
+)
+
+premium_plan = models.Plan(
+    title = "Premium Plan",
+    description = [
+        "Unlimited access to all premium templates, including exclusive designs.",
+        "Advanced AI to fully optimize resumes, including tailored content, keyword optimization, and industry-specific guidance.",
+        "Access insights on resume views, downloads, and keyword match rates.",
+        "Create and customize cover letters, portfolios, and LinkedIn profile optimization.",
+    ],
+    duration_in_months = 12,
+    price_in_dollars = 99.99
+)
+
 # session.add(free_plan)
+# session.add(pro_plan)
+# session.add(premium_plan)
 # session.commit()
 
 # from firebase_admin import storage
