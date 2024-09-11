@@ -54,11 +54,13 @@ class Resume(ResumeBase):
         orm_mode : True
 
 class Education(BaseModel):
-    school: str
-    degree: str
-    start_date: str
-    end_date: str
-    description: Optional[str] = None
+    id: str
+    school: Optional[str] = None
+    degree: Optional[str] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    course_studied: Optional[str] = None
+    grade: Optional[str] = None
 
 class Experience(BaseModel):
     id: str
@@ -82,6 +84,7 @@ class ResumeEdit(BaseModel):
     tools: Optional[List[str]] = None
     education: Optional[List[Education]] = None
     others: Optional[dict] = None
-
+    professional_summary: Optional[str] = None
+    
     class Config:
         orm_mode = True

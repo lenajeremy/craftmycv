@@ -19,7 +19,7 @@ def get_user_resumes(user_id: str):
     """
     session = SessionLocal()
     try:
-        resumes = session.query(Resume).filter_by(owner_id=user_id).all()
+        resumes = session.query(Resume).filter_by(owner_id=user_id).order_by(Resume.updated_at.desc()).all()
         formatted_resumes = [{
             "id": resume.id, 
             "name": resume.name, 

@@ -2,9 +2,9 @@ from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON
 from sqlalchemy_utils import ChoiceType
 from sqlalchemy.orm import relationship
 from uuid import uuid4
-from datetime import datetime
 import random
 import string
+from sqlalchemy.sql import func
 
 from .setup import Base
 
@@ -100,8 +100,8 @@ class Resume(Base):
     owner = relationship("User", back_populates="resumes")
     template = relationship("Template", back_populates="resumes")
     template_id = Column(UUID, ForeignKey("templates.id"))
-    created_at = Column(DateTime, default=datetime.now())
-    updated_at = Column(DateTime, default=datetime.now(), onupdate=datetime.now())
+    created_at = Column(DateTime, nullable=False, default=func.now())
+    updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
     name = Column(String, default="Untitled Resume")
 
     download_count = Column(Integer, default=0)
@@ -125,4 +125,5 @@ class Resume(Base):
     tools = Column(JSON)
     others = Column(JSON)
     education = Column(JSON)
+    professional_summary = Column(String)
 
