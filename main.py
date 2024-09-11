@@ -1,8 +1,9 @@
 from auth.routes import authrouter
 from templates.routes import templatesrouter
 from resumes.routes import resumesrouter
+from user.routes import userrouter
 from fastapi import FastAPI
-from urllib.parse import unquote
+
 
 from database import models, schemas #crud
 from database.setup import SessionLocal, engine
@@ -15,6 +16,7 @@ app = FastAPI()
 app.include_router(authrouter)
 app.include_router(templatesrouter)
 app.include_router(resumesrouter)
+app.include_router(userrouter)
 
 
 # Dependency

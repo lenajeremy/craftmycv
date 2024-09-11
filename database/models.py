@@ -17,7 +17,8 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=False)
-    plan = Column(UUID, ForeignKey("plans.id"))
+    plan_id = Column(UUID, ForeignKey("plans.id"))
+    plan = relationship("Plan", back_populates="users")
     resumes = relationship("Resume", back_populates="owner")
     auth_sessions = relationship("AuthSession", back_populates="user")
 
@@ -50,7 +51,7 @@ class Plan(Base):
     title = Column(String, unique=True)
     description = Column(String)
     price_in_dollars = Column(Float)
-    
+    users = relationship("User", back_populates="plan")
 
 
 class Template(Base):

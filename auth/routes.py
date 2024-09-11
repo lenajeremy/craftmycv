@@ -78,7 +78,7 @@ def login(body: LoginBody):
             if user.is_active:
                 access_token = create_access_token(data={"email": user.email})
                 # get plan name for plan id
-                plan = session.query(Plan).filter_by(id=user.plan).first()
+                plan = session.query(Plan).filter_by(id=user.plan_id).first()
 
                 return JSONResponse(respond_success({
                     "token": access_token,
@@ -120,7 +120,7 @@ async def register(body: RegisterBody, request: Request):
                     return JSONResponse(respond_error("Internal Server error"), status_code=500)
                 
                 password_hash = bcrypt.hashpw(body.password.encode('utf-8'), bcrypt.gensalt())
-                user = User(name = body.name, email = body.email, hashed_password = password_hash.decode(), plan=plan.id)
+                user = User(name = body.name, email = body.email, hashed_password = password_hash.decode(), plan=plan)
                 authsession = AuthSession(type = "email_validation", user = user)
 
                 session.add(user)
