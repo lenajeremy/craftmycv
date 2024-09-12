@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from utils.response import respond_error, respond_success
 from mails.send_mail import send_mail
-from database.models import Subscription, User, Plan, AuthSession
+from database.models import Subscription, User, AuthSession
 from database.setup import SessionLocal
 from sqlalchemy import update
 import bcrypt
@@ -85,7 +85,7 @@ def login(body: LoginBody):
                     "user_id": str(user.id),
                     "name": user.name,
                     "email": user.email,
-                    "plan": plan.title if plan else "No Plan (FREE)",
+                    "plan": plan.title if plan else "Free Plan",
                     "is_active": user.is_active,
                     "has_valid_subscription": active_subscription is not None,
                 }, "Logged in successfully"))

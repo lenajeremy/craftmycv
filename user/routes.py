@@ -32,7 +32,7 @@ async def get_user_details(user: User = Depends(get_current_user)):
             "id": str(user.id),
             "name": user.name,
             "email": user.email,
-            "plan": plan.title if plan else "No Plan (FREE)",
+            "plan": plan.title if plan else "Free Plan",
             "has_valid_subscription": active_subscription is not None,
             "is_active": user.is_active,
         }
