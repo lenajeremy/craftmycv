@@ -140,7 +140,7 @@ class Resume(Base):
     }
     """
     experiences = Column(JSON)
-    tools = Column(JSON)
+    skills = Column(JSON)
     others = Column(JSON)
     education = Column(JSON)
     professional_summary = Column(String)

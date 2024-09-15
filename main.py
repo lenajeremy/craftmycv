@@ -4,6 +4,7 @@ from templates.routes import templatesrouter
 from resumes.routes import resumesrouter
 from user.routes import userrouter
 from fastapi import FastAPI
+from mails.send_mail import send_mail
 
 
 from database import models, schemas #crud
@@ -37,6 +38,8 @@ firebase_config =  {
 }
 
 fb_app = initialize_app(cred, firebase_config)
+
+print("MAILERSEND returns", send_mail("Jeremiah Lena", "jeremiahlena13@outlook.com", "Sending to outlook, please don't reject"))
 
 
 # session = SessionLocal()

@@ -45,10 +45,11 @@ class ResumeEdit(BaseModel):
     role: Optional[str] = None
     description: Optional[str] = None
     experiences: Optional[List[Experience]] = None
-    tools: Optional[List[str]] = None
+    skills: Optional[List[str]] = None
     education: Optional[List[Education]] = None
     others: Optional[dict] = None
     professional_summary: Optional[str] = None
+    link: Optional[str] = None
     
     class Config:
         orm_mode = True

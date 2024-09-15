@@ -91,7 +91,8 @@ def login(body: LoginBody):
                 }, "Logged in successfully"))
             
             else:
-                send_mail(user.name, user.email, "Activate account to login", "Click this link to activate your account", "Click this link to activate your account")
+                res = send_mail(user.name, user.email, "Activate account to login", "Click this link to activate your account", "Click this link to activate your account")
+                print(res)
                 return JSONResponse(respond_success(None, "Please activate your account. A mail has been sent to your email address"))
         else:
             return JSONResponse(respond_error("Invalid Login Credentials"), status_code = 401)            

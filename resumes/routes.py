@@ -1,10 +1,12 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from database import schemas
 from database.models import Resume, Template
 from database.setup import SessionLocal
 from utils.response import respond_error, respond_success
 from sqlalchemy.exc import SQLAlchemyError
+from .utils import get_templates_byes_from_url, generate_resume_data
+from docxtpl import DocxTemplate
 
 resumesrouter = APIRouter(
     prefix="/resumes",
@@ -129,6 +131,24 @@ def delete_resume(resume_id: str):
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
 
+@resumesrouter.post("/{resume_id}/generate", response_class=JSONResponse)
+def generate_resume(resume_id: str):
+    """
+    Generate a resume
+    """
+    # get resume data
+    session = SessionLocal()
+    resume = session.query(Resume).filter_by(id=resume_id).first()
+    template = session.query(Template).filter_by(id=resume.template_id).first()
+    
+    docx_buffer = get_templates_byes_from_url(url=template.file_url)
+    document = DocxTemplate(docx_buffer)
+    resume_data = generate_resume_date(resume)
+
+    # generate resume
+    # return resume
+
+    return respond_success(None, "Resume generated successfully")
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
 def generate_resume(request: schemas.Resume):

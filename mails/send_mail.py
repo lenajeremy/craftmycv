@@ -9,7 +9,7 @@ def send_mail(to_name, to_email, subject, html = "", text = ""):
 
     mail_from = {
         "name": "Jeremiah from CraftMyCV",
-        "email": "jeremiah@trial-z86org8660z4ew13.mlsender.net",
+        "email": "jeremiahlena800@gmail.com",
     }
 
     recipients = [
