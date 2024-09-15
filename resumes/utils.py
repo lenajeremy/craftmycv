@@ -28,12 +28,12 @@ def generate_resume_data(resume: Resume):
     }
 
 
-def upload_file_to_firebase(file_path: str, resume_id: str):
-    import os
+def upload_file_to_firebase(file: BytesIO, resume_id: str):
+    file.seek(0)
+
     bucket = storage.bucket()
-    filename = os.path.basename(file_path)
-    blob = bucket.blob(f"resumes/{resume_id}/{filename}")
-    blob.upload_from_filename(file_path)
+    blob = bucket.blob(f"resumes/{resume_id}.docx")
+    blob.upload_from_file(file, content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
     blob.make_public()
     return blob.public_url

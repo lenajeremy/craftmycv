@@ -5,8 +5,10 @@ from database.models import Resume, Template
 from database.setup import SessionLocal
 from utils.response import respond_error, respond_success
 from sqlalchemy.exc import SQLAlchemyError
-from .utils import get_templates_byes_from_url, generate_resume_data
+from .utils import get_templates_byes_from_url, generate_resume_data, upload_file_to_firebase
 from docxtpl import DocxTemplate
+from io import BytesIO
+
 
 resumesrouter = APIRouter(
     prefix="/resumes",
@@ -86,6 +88,7 @@ def get_resume(resume_id: str):
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
 
+
 @resumesrouter.patch("/{resume_id}/edit", response_class=JSONResponse)
 def edit_resume(resume_id: str, request: schemas.ResumeEdit):
     """
@@ -143,12 +146,23 @@ def generate_resume(resume_id: str):
     
     docx_buffer = get_templates_byes_from_url(url=template.file_url)
     document = DocxTemplate(docx_buffer)
-    resume_data = generate_resume_date(resume)
+    resume_data = generate_resume_data(resume)
+    document.render(resume_data)
+
+    document_bytes = BytesIO()
+    document.save(document_bytes)
+
+    file_url = upload_file_to_firebase(document_bytes, resume.id)
+    resume.file_url = file_url
+
+    session.commit()
+    session.refresh(resume)
+    
 
     # generate resume
     # return resume
 
-    return respond_success(None, "Resume generated successfully")
+    return respond_success(file_url, "Resume generated successfully")
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
 def generate_resume(request: schemas.Resume):
