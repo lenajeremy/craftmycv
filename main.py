@@ -48,7 +48,11 @@ print("JSON", cred_json)
 cred_dict = json.loads(cred_json)
 print("DICT", cred_dict)
 
-cred = credentials.Certificate(cred_dict)
+try:
+    cred = credentials.Certificate(cred_dict)
+except Exception as e:
+    print(e)
+    exit(0)
 
 firebase_config =  {
   "storageBucket": "craftmycv-2bf02.appspot.com",
