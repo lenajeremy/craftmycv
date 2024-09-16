@@ -15,7 +15,7 @@ class Resume(ResumeBase):
     template_id : str
 
     class Config:
-        orm_mode : True
+        from_attributes : True
 
 class Education(BaseModel):
     id: str
@@ -52,7 +52,7 @@ class ResumeEdit(BaseModel):
     link: Optional[str] = None
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SubscriptionCreate(BaseModel):
     user_id: str
