@@ -9,7 +9,8 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
-
+import ssl
+print(ssl.OPENSSL_VERSION)
 
 from database import models, schemas #crud
 from database.setup import SessionLocal, engine

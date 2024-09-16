@@ -130,8 +130,8 @@ async def register(body: RegisterBody, request: Request):
                 html_content = f"Welcome to CraftMyCV. <a href='{verification_link}'>Click here to verify your email</a>"
                 plain_text = f"Welcome to CraftMyCV. Verify your email at: {verification_link}"
 
-                res: str = send_mail(body.name, body.email, "Welcome to CraftMyCV.", html_content, plain_text)
-             if res.find("20") != -1:
+                res = send_mail(body.name, body.email, "Welcome to CraftMyCV.", html_content, plain_text)
+             if res:
                   return JSONResponse(respond_success(200, "Registration completed. Please verify your email"))
              else:
                   return JSONResponse(respond_error("Failed to complete registration. Please try again"), status_code=500)

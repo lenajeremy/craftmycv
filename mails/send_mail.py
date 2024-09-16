@@ -37,5 +37,5 @@ def send_mail(to_name, to_email, subject, html = "", text = ""):
     }
 
     email = resend.Emails.send(params=params)
-    print(email)
+    print(email, "resend email res")
     return email
