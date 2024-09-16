@@ -1,31 +1,15 @@
-from mailersend import emails
-from dotenv import load_dotenv
+import resend
 import os
 
-mailer = emails.NewEmail(os.getenv("MAILERSEND_API_KEY"))
 
 def send_mail(to_name, to_email, subject, html = "", text = ""):
-    mail_body = {}
-
-    mail_from = {
-        "name": "Jeremiah from CraftMyCV",
-        "email": "jeremiahlena800@gmail.com",
-    }
-
-    recipients = [
-        {
-            "name": to_name,
-            "email": to_email,
-        }
-    ]
-
-
+    resend.api_key = os.getenv("RESEND_API_KEY")
     if text == "":
         text = f"Welcome {to_name}! Congrats for sending test email with Mailtrap!\n\nInspect it using the tabs you see above and learn how this email can be improved."
     
     if html == "": 
         html = """
-    <!doctype html>
+    <!doctype html>    
         <html>
         <head>
             <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -43,10 +27,15 @@ def send_mail(to_name, to_email, subject, html = "", text = ""):
         </html>
     """
     
-    mailer.set_mail_from(mail_from, mail_body)
-    mailer.set_mail_to(recipients, mail_body)
-    mailer.set_subject(subject, mail_body)
-    mailer.set_html_content(html, mail_body)
-    mailer.set_plaintext_content(text, mail_body)
-    
-    return mailer.send(mail_body)
+    params: resend.Emails.SendParams = {
+        "from": "Jeremiah <test@craftmycv.xyz>",
+        "to": [to_email],
+        "subject": subject,
+        "html": html,
+        "text": text,
+        "reply_to": "jeremiahlena13@gmail.com"
+    }
+
+    email = resend.Emails.send(params=params)
+    print(email)
+    return email
