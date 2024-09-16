@@ -9,8 +9,6 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
-import ssl
-print(ssl.OPENSSL_VERSION)
 
 from database import models, schemas #crud
 from database.setup import SessionLocal, engine
@@ -46,9 +44,9 @@ def get_db():
 
 import os, json
 cred_json = os.getenv("FIREBASE_CERTIFICATE")
-# print("JSON", cred_json)
+print("JSON", cred_json)
 cred_dict = json.loads(cred_json)
-# print("DICT", cred_dict)
+print("DICT", cred_dict)
 
 cred = credentials.Certificate(cred_dict)
 
