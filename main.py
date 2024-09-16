@@ -45,7 +45,7 @@ def get_db():
 
 import os, json
 cred_json = os.getenv("FIREBASE_CERTIFICATE")
-cred_dict = json.loads(f"'{cred_json}'")
+cred_dict = json.loads(cred_json)
 
 cred = credentials.Certificate(cred_dict)
 
