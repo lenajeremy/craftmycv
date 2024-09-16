@@ -43,8 +43,11 @@ def get_db():
     finally:
         db.close()
 
+import os, json
+cred_json = os.getenv("FIREBASE_CERTIFICATE")
+cred_dict = json.loads(cred_json)
 
-cred = credentials.Certificate("craftmycv-2bf02-firebase-adminsdk-jfdby-534ef676e3.json")
+cred = credentials.Certificate(cred_dict)
 
 firebase_config =  {
   "storageBucket": "craftmycv-2bf02.appspot.com",
