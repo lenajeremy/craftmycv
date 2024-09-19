@@ -24,8 +24,8 @@ def upload_template(image: UploadFile = File(...), docx_file: UploadFile = File(
     session = SessionLocal()
 
     # Define the Firebase storage paths
-    image_path = f"{template_id}/{image.filename}"
-    docx_path = f"{template_id}/{docx_file.filename}"
+    image_path = f"templates/{template_id}/image"
+    docx_path = f"templates/{template_id}/file"
 
     try:
         # Upload image to Firebase Storage

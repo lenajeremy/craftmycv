@@ -7,6 +7,7 @@ from utils.response import respond_error, respond_success
 from sqlalchemy.exc import SQLAlchemyError
 from .utils import get_templates_byes_from_url, generate_resume_data, upload_file_to_firebase
 from docxtpl import DocxTemplate
+from docx2pdf import convert
 from io import BytesIO
 
 
@@ -147,12 +148,14 @@ def generate_resume(resume_id: str):
     docx_buffer = get_templates_byes_from_url(url=template.file_url)
     document = DocxTemplate(docx_buffer)
     resume_data = generate_resume_data(resume)
+    
     document.render(resume_data)
 
     document_bytes = BytesIO()
     document.save(document_bytes)
 
-    file_url = upload_file_to_firebase(document_bytes, resume.id)
+    file_url = upload_file_to_firebase(document_bytes, f"{resume.first_name} {resume.last_name}'s Resume.docx")
+    # convert()
     resume.file_url = file_url
 
     session.commit()
