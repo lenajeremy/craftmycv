@@ -121,8 +121,10 @@ class Resume(Base):
     created_at = Column(DateTime, nullable=False, default=func.now())
     updated_at = Column(DateTime, nullable=False, default=func.now(), onupdate=func.now())
     name = Column(String, default="Untitled Resume")
-    file_url = Column(String, default="")
+    docx_url = Column(String, default="")
+    pdf_url = Column(String, default="")
     image_url = Column(String, default="")
+    
 
 
     download_count = Column(Integer, default=0)

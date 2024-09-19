@@ -15,6 +15,7 @@ from database.setup import SessionLocal, engine
 from firebase_admin import initialize_app, credentials
 
 
+
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()

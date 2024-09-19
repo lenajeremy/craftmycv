@@ -1,11 +1,13 @@
 import requests
 from firebase_admin import storage
 from io import BytesIO
-from database.models import Resume
+from database.models import Resume, Template
 from database.schemas import ResumeEdit
+from database.setup import SessionLocal
+from docxtpl import DocxTemplate
 
 
-def get_templates_byes_from_url(url: str) -> BytesIO:
+def convert_file_url_to_byes(url: str) -> BytesIO:
     response = requests.get(url, timeout=10)
     if response.status_code == 200:
         docx_buffer = BytesIO(response.content)
@@ -13,6 +15,26 @@ def get_templates_byes_from_url(url: str) -> BytesIO:
     else:
         return None
 
+
+def get_resume_buffer(resume_id: str):
+    """
+    Returns a buffer array with the generated resume (in docx)
+    """
+    session = SessionLocal()
+    resume = session.query(Resume).filter_by(id=resume_id).first()
+    template = session.query(Template).filter_by(id=resume.template_id).first()
+    
+    docx_buffer = convert_file_url_to_byes(url=template.file_url)
+    document = DocxTemplate(docx_buffer)
+    resume_data = generate_resume_data(resume)
+    
+    document.render(resume_data)
+
+    document_bytes = BytesIO()
+    
+    document.save(document_bytes)
+
+    return document_bytes
 
 def generate_resume_data(resume: Resume):
     return {
@@ -28,12 +50,13 @@ def generate_resume_data(resume: Resume):
     }
 
 
-def upload_file_to_firebase(file: BytesIO, resume_id: str):
+
+def upload_file_to_firebase(file: BytesIO, file_path: str, file_type: str = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
     file.seek(0)
 
     bucket = storage.bucket()
-    blob = bucket.blob(f"resumes/{resume_id}.docx")
-    blob.upload_from_file(file, content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    blob = bucket.blob(file_path)
+    blob.upload_from_file(file, content_type=file_type)
 
     blob.make_public()
     return blob.public_url
