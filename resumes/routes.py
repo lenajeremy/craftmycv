@@ -211,7 +211,7 @@ async def preview_resume(resume_id: str):
     session.commit()
     session.refresh(resume)
 
-    return respond_success({"resume_image_url": preview_url}, "Retrieved resume image")
+    return respond_success({"resume_preview_url": preview_url}, "Retrieved resume image")
     
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
