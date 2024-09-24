@@ -170,47 +170,48 @@ async def preview_resume(resume_id: str):
         docx_url = upload_file_to_firebase(document_bytes, resume_path)
         resume.docx_url = docx_url
 
-    pdf_url = resume.pdf_url
+    # pdf_url = resume.pdf_url
 
-    if pdf_url is None or pdf_url == "":
-        import requests
-        print("generating pdf from docx")
-        res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
-            "url": docx_url, 
-            "name": f"{resume.first_name} {resume.last_name}'s Resume.pdf", 
-            "async": False
-        }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]})
+    # if pdf_url is None or pdf_url == "":
+    #     import requests
+    #     print("generating pdf from docx")
+    #     res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
+    #         "url": docx_url, 
+    #         "name": f"{resume.first_name} {resume.last_name}'s Resume.pdf", 
+    #         "async": False
+    #     }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]})
 
-        if res.status_code == 200:
-            res_json = res.json()
-            pdf_url = res_json['url']
-            pdf_bytes = convert_file_url_to_byes(pdf_url)
-            pdf_url = upload_file_to_firebase(pdf_bytes, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.pdf", file_type="application/pdf")
-            resume.pdf_url = pdf_url
-        else:
-            return respond_error(res.json())
+    #     if res.status_code == 200:
+    #         res_json = res.json()
+    #         pdf_url = res_json['url']
+    #         pdf_bytes = convert_file_url_to_byes(pdf_url)
+    #         pdf_url = upload_file_to_firebase(pdf_bytes, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.pdf", file_type="application/pdf")
+    #         resume.pdf_url = pdf_url
+    #     else:
+    #         return respond_error(res.json())
     
 
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
-        pdf_bytes = convert_file_url_to_byes(pdf_url)
-        temp_pdf.write(pdf_bytes.getvalue())
-        pdf_url = temp_pdf.name
+    # with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
+    #     pdf_bytes = convert_file_url_to_byes(pdf_url)
+    #     temp_pdf.write(pdf_bytes.getvalue())
+    #     pdf_url = temp_pdf.name
 
-    images = convert_from_path(pdf_url)
-    img_byte_arr = io.BytesIO()
-    images[0].save(img_byte_arr, format='PNG')
-    img_byte_arr.seek(0)
+    # images = convert_from_path(pdf_url)
+    # img_byte_arr = io.BytesIO()
+    # images[0].save(img_byte_arr, format='PNG')
+    # img_byte_arr.seek(0)
 
-    image_url = upload_file_to_firebase(img_byte_arr, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.png",file_type="image/png")
-    resume.image_url = image_url
+    # image_url = upload_file_to_firebase(img_byte_arr, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.png",file_type="image/png")
+    # resume.image_url = image_url
 
-    # clean up temporary files
-    os.remove(pdf_url)
+    # # clean up temporary files
+    # os.remove(pdf_url)
+    preview_url = f"https://view.officeapps.live.com/op/view.aspx?src={docx_url}"
 
     session.commit()
     session.refresh(resume)
 
-    return respond_success({"resume_image_url": image_url}, "Retrieved resume image")
+    return respond_success({"resume_image_url": preview_url}, "Retrieved resume image")
     
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
