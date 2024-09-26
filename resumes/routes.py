@@ -206,12 +206,12 @@ async def preview_resume(resume_id: str):
 
     # # clean up temporary files
     # os.remove(pdf_url)
-    preview_url = f"https://view.officeapps.live.com/op/view.aspx?src={docx_url}"
+    preview_url = f"https://docs.google.com/viewer?url={docx_url}"
 
     session.commit()
     session.refresh(resume)
 
-    return respond_success({"resume_preview_url": preview_url}, "Retrieved resume image")
+    return respond_success({"resume_preview_url": preview_url, "file_url": docx_url}, "Retrieved resume image")
     
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
