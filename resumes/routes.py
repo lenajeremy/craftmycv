@@ -9,6 +9,7 @@ from .utils import upload_file_to_firebase, get_resume_buffer, convert_file_url_
 import io, os, tempfile
 from docx2pdf import convert
 from pdf2image import convert_from_path
+from datetime import datetime
 
 
 resumesrouter = APIRouter(
@@ -169,66 +170,35 @@ def generate_resume(resume_id: str):
 async def preview_resume(resume_id: str):
     session = SessionLocal()
     resume = session.query(Resume).filter_by(id=resume_id).first()
+    docx_url = resume.docx_url
 
     if resume is None:
         return JSONResponse(respond_error(f"Resume with ID: {resume_id} not found"), status_code=404)
     
-    if resume.docx_url or resume.docx_url == "":
+    print(resume.docx_updated_at, resume.updated_at)
+    
+    if resume.docx_updated_at is None or (resume.docx_updated_at is not None and resume.docx_updated_at < resume.updated_at):
+        print('generating docx')
         document_bytes = get_resume_buffer(resume_id=resume.id)
         resume_path = f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.docx"
         docx_url = upload_file_to_firebase(document_bytes, resume_path)
         resume.docx_url = docx_url
+        resume.docx_updated_at = datetime.now()     
 
-    # pdf_url = resume.pdf_url
-
-    # if pdf_url is None or pdf_url == "":
-    #     import requests
-    #     print("generating pdf from docx")
-    #     res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
-    #         "url": docx_url, 
-    #         "name": f"{resume.first_name} {resume.last_name}'s Resume.pdf", 
-    #         "async": False
-    #     }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]})
-
-    #     if res.status_code == 200:
-    #         res_json = res.json()
-    #         pdf_url = res_json['url']
-    #         pdf_bytes = convert_file_url_to_byes(pdf_url)
-    #         pdf_url = upload_file_to_firebase(pdf_bytes, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.pdf", file_type="application/pdf")
-    #         resume.pdf_url = pdf_url
-    #     else:
-    #         return respond_error(res.json())
-    
-
-    # with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
-    #     pdf_bytes = convert_file_url_to_byes(pdf_url)
-    #     temp_pdf.write(pdf_bytes.getvalue())
-    #     pdf_url = temp_pdf.name
-
-    # images = convert_from_path(pdf_url)
-    # img_byte_arr = io.BytesIO()
-    # images[0].save(img_byte_arr, format='PNG')
-    # img_byte_arr.seek(0)
-
-    # image_url = upload_file_to_firebase(img_byte_arr, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.png",file_type="image/png")
-    # resume.image_url = image_url
-
-    # # clean up temporary files
-    # os.remove(pdf_url)
     preview_url = f"https://docs.google.com/viewer?url={docx_url}"
 
     session.commit()
     session.refresh(resume)
     session.close()
 
-    return respond_success({"resume_preview_url": preview_url, "file_url": docx_url}, "Retrieved resume image")
+    return respond_success({ "resume_preview_url": preview_url }, "Retrieved resume image")
     
 
 @resumesrouter.get("/{resume_id}/download/{doc_type}", response_class=JSONResponse)
 async def download_resume(resume_id: str, doc_type: str):
     session = SessionLocal()
     resume = session.query(Resume).filter_by(id=resume_id).first()
-    file_url = ""
+    file_url = resume.pdf_url if doc_type == 'pdf' else resume.docx_url
 
     # TODO: before doing anything, I have to check the plan the user is currently on, 
     # and check how many times they've downloaded the resume
@@ -236,7 +206,8 @@ async def download_resume(resume_id: str, doc_type: str):
     if resume is None:
         return JSONResponse(respond_error(f"Resume with ID: {resume_id} not found"), status_code=404)
     
-    if resume.docx_url or resume.docx_url == "":
+    if resume.docx_updated_at is not None and resume.docx_updated_at < resume.updated_at:
+        print('generating docx')
         document_bytes = get_resume_buffer(resume_id=resume.id)
         resume_path = f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.docx"
         docx_url = upload_file_to_firebase(document_bytes, resume_path)
@@ -246,7 +217,7 @@ async def download_resume(resume_id: str, doc_type: str):
     pdf_url = resume.pdf_url
 
     if doc_type == "pdf":
-        if pdf_url is None or pdf_url == "":
+        if pdf_url is None or pdf_url == "" or (resume.updated_at is not None and resume.updated_at > resume.docx_updated_at):
             import requests
             print("generating pdf from docx")
             res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
