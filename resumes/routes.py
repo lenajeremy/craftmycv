@@ -73,6 +73,8 @@ def create_resume(request: schemas.Resume):
             }, "Resume created successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
+    finally:
+        session.close()
     
 
 @resumesrouter.get("/{resume_id}", response_class=JSONResponse)
@@ -88,6 +90,8 @@ def get_resume(resume_id: str):
         return respond_success(resume, "Resume fetched successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
+    finally:
+        session.close()
 
 
 @resumesrouter.patch("/{resume_id}/edit", response_class=JSONResponse)
@@ -111,6 +115,8 @@ def edit_resume(resume_id: str, request: schemas.ResumeEdit):
         return respond_success(resume, "Resume edited successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
+    finally:
+        session.close()
 
 
 @resumesrouter.delete("/{resume_id}/delete", response_class=JSONResponse)
@@ -134,6 +140,8 @@ def delete_resume(resume_id: str):
         return respond_success(None, "Resume deleted successfully")
     except Exception as e:
         return JSONResponse(respond_error(e), status_code=500)
+    finally:
+        session.close()
 
 @resumesrouter.post("/{resume_id}/generate", response_class=JSONResponse)
 def generate_resume(resume_id: str):
@@ -152,6 +160,7 @@ def generate_resume(resume_id: str):
 
     session.commit()
     session.refresh(resume)
+    session.close()
 
     return respond_success(docx_url, "Resume generated successfully")
 
@@ -210,9 +219,61 @@ async def preview_resume(resume_id: str):
 
     session.commit()
     session.refresh(resume)
+    session.close()
 
     return respond_success({"resume_preview_url": preview_url, "file_url": docx_url}, "Retrieved resume image")
     
+
+@resumesrouter.get("/{resume_id}/download/{doc_type}", response_class=JSONResponse)
+async def download_resume(resume_id: str, doc_type: str):
+    session = SessionLocal()
+    resume = session.query(Resume).filter_by(id=resume_id).first()
+    file_url = ""
+
+    # TODO: before doing anything, I have to check the plan the user is currently on, 
+    # and check how many times they've downloaded the resume
+
+    if resume is None:
+        return JSONResponse(respond_error(f"Resume with ID: {resume_id} not found"), status_code=404)
+    
+    if resume.docx_url or resume.docx_url == "":
+        document_bytes = get_resume_buffer(resume_id=resume.id)
+        resume_path = f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.docx"
+        docx_url = upload_file_to_firebase(document_bytes, resume_path)
+        resume.docx_url = docx_url
+        file_url = docx_url
+
+    pdf_url = resume.pdf_url
+
+    if doc_type == "pdf":
+        if pdf_url is None or pdf_url == "":
+            import requests
+            print("generating pdf from docx")
+            res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
+                "url": docx_url, 
+                "name": f"{resume.first_name} {resume.last_name}'s Resume.pdf", 
+                "async": False
+            }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]})
+
+            if res.status_code == 200:
+                res_json = res.json()
+                pdf_url = res_json['url']
+                pdf_bytes = convert_file_url_to_byes(pdf_url)
+                pdf_url = upload_file_to_firebase(pdf_bytes, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.pdf", file_type="application/pdf")
+                resume.pdf_url = pdf_url
+                file_url = pdf_url
+            else:
+                return respond_error(res.json())
+            
+    resume.download_count += 1
+
+    session.commit()
+    session.refresh(resume)
+    session.close()
+    return respond_success({"file_url": file_url}, "Download complete")
+
+        
+
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
 def generate_resume_ai(request: schemas.Resume):

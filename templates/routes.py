@@ -62,6 +62,8 @@ def upload_template(image: UploadFile = File(...), docx_file: UploadFile = File(
     except Exception as e:
         print(e)
         return respond_error("Failed to upload template")
+    finally: 
+        session.close()
     
 
 
@@ -110,7 +112,8 @@ def delete_template(template_id: str):
     except NoResultFound:
         # Raise a 404 error if the template does not exist
         raise HTTPException(status_code=404, detail="Template not found")
-    
+    finally:
+        session.close()
     # 204 status code implies successful deletion with no content
     return None
 

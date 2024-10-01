@@ -20,21 +20,21 @@ def get_resume_buffer(resume_id: str):
     """
     Returns a buffer array with the generated resume (in docx)
     """
-    session = SessionLocal()
-    resume = session.query(Resume).filter_by(id=resume_id).first()
-    template = session.query(Template).filter_by(id=resume.template_id).first()
-    
-    docx_buffer = convert_file_url_to_byes(url=template.file_url)
-    document = DocxTemplate(docx_buffer)
-    resume_data = generate_resume_data(resume)
-    
-    document.render(resume_data)
+    with SessionLocal() as session:
+        resume = session.query(Resume).filter_by(id=resume_id).first()
+        template = session.query(Template).filter_by(id=resume.template_id).first()
+        
+        docx_buffer = convert_file_url_to_byes(url=template.file_url)
+        document = DocxTemplate(docx_buffer)
+        resume_data = generate_resume_data(resume)
+        
+        document.render(resume_data)
 
-    document_bytes = BytesIO()
-    
-    document.save(document_bytes)
+        document_bytes = BytesIO()
+        
+        document.save(document_bytes)
 
-    return document_bytes
+        return document_bytes
 
 def generate_resume_data(resume: Resume):
     return {
