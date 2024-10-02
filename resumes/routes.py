@@ -177,15 +177,15 @@ async def preview_resume(resume_id: str):
     if resume is None:
         return JSONResponse(respond_error(f"Resume with ID: {resume_id} not found"), status_code=404)
     
-    print(resume.docx_updated_at, resume.resume_data_updated_at)
+    print(resume.last_preview_date, resume.resume_data_updated_at)
     
-    if resume.docx_updated_at is None or (resume.docx_updated_at is not None and resume.docx_updated_at < resume.resume_data_updated_at):
+    if resume.last_preview_date is None or (resume.last_preview_date is not None and resume.last_preview_date < resume.resume_data_updated_at):
         print('generating docx')
         document_bytes = get_resume_buffer(resume_id=resume.id)
         resume_path = f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.docx"
         docx_url = upload_file_to_firebase(document_bytes, resume_path)
         resume.docx_url = docx_url
-        resume.docx_updated_at = datetime.now(timezone.utc)     
+        resume.last_preview_date = datetime.now(timezone.utc)     
 
     preview_url = f"https://docs.google.com/viewer?url={docx_url}"
 
@@ -207,7 +207,7 @@ async def download_resume(resume_id: str, doc_type: str):
     if resume is None:
         return JSONResponse(respond_error(f"Resume with ID: {resume_id} not found"), status_code=404)
     
-    if resume.docx_updated_at is not None and resume.docx_updated_at < resume.resume_data_updated_at:
+    if resume.last_preview_date is not None and resume.last_preview_date < resume.resume_data_updated_at:
         print('generating docx')
         document_bytes = get_resume_buffer(resume_id=resume.id)
         resume_path = f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.docx"
@@ -218,7 +218,7 @@ async def download_resume(resume_id: str, doc_type: str):
     pdf_url = resume.pdf_url
 
     if doc_type == "pdf":
-        if pdf_url is None or pdf_url == "" or (resume.updated_at is not None and resume.docx_updated_at > resume.resume_data_updated_at):
+        if not pdf_url or (resume.last_download_date is not None and resume.last_download_date < resume.resume_data_updated_at):
             import requests
             print("generating pdf from docx")
             res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
@@ -227,21 +227,24 @@ async def download_resume(resume_id: str, doc_type: str):
                 "async": False
             }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]})
 
+            print(res)
+
             if res.status_code == 200:
                 res_json = res.json()
                 pdf_url = res_json['url']
                 pdf_bytes = convert_file_url_to_byes(pdf_url)
                 pdf_url = upload_file_to_firebase(pdf_bytes, f"resumes/{resume.id}/{resume.first_name} {resume.last_name}'s Resume.pdf", file_type="application/pdf")
-                print(pdf_url, file_url)
+                print("PDF URL:", pdf_url, "FILE_URL", file_url)
                 resume.pdf_url = pdf_url
                 file_url = pdf_url
             else:
                 return respond_error(res.json())
             
+    resume.last_download_date = datetime.now(timezone.utc)
     resume.download_count += 1
 
-    session.refresh(resume)
     session.commit()
+    session.refresh(resume)
     session.close()
     return respond_success({"file_url": file_url}, "Download complete")
 

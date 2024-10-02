@@ -124,7 +124,8 @@ class Resume(Base):
     docx_url = Column(String, default="")
     pdf_url = Column(String, default="")
     image_url = Column(String, default="")
-    docx_updated_at = Column(DateTime, nullable=True)
+    last_preview_date = Column(DateTime, nullable=True)
+    last_download_date = Column(DateTime, nullable=True)
     resume_data_updated_at = Column(DateTime, nullable=False, default=func.now())
     
 
