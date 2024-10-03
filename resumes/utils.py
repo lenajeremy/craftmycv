@@ -1,10 +1,12 @@
-import requests
-from firebase_admin import storage
+"""
+Utils for resume creation
+"""
 from io import BytesIO
-from database.models import Resume, Template
-from database.schemas import ResumeEdit
-from database.setup import SessionLocal
+import requests
 from docxtpl import DocxTemplate
+from firebase_admin import storage
+from database.models import Resume, Template
+from database.setup import SessionLocal
 
 
 def convert_file_url_to_byes(url: str) -> BytesIO:

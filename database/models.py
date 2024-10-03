@@ -2,6 +2,7 @@
 from uuid import uuid4
 import random
 import string
+from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, ForeignKey, DateTime, String, UUID, JSON, Float, Integer
 from sqlalchemy.orm import relationship
@@ -12,6 +13,9 @@ from .setup import Base
 
 
 class User(Base):
+    """
+    Defines properties of the main user of the application
+    """
     __tablename__ = "users"
 
     id = Column(UUID, primary_key=True, unique=True, default=uuid4)
@@ -19,8 +23,6 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=False)
-    plan_id = Column(UUID, ForeignKey("plans.id"))
-    plan = relationship("Plan", back_populates="users")
     resumes = relationship("Resume", back_populates="owner")
     auth_sessions = relationship("AuthSession", back_populates="user")
     subscriptions = relationship("Subscription", back_populates="user")
@@ -48,6 +50,9 @@ class AuthSession(Base):
 
 
 class Plan(Base):
+    """
+    Defines the properties of a Plan
+    """
     __tablename__ = "plans"
 
     id = Column(UUID, primary_key=True, unique=True, default=uuid4)
@@ -55,20 +60,28 @@ class Plan(Base):
     description = Column(JSON, default=[])
     duration_in_months = Column(Integer)
     price_in_dollars = Column(Float)
-    users = relationship("User", back_populates="plan")
     subscriptions = relationship("Subscription", back_populates="plan")
-    
+
+
 class Subscription(Base):
+    """
+    Defines the properties of a Subscription
+    """
     __tablename__ = "subscriptions"
 
     id = Column(UUID, primary_key=True, unique=True, default=uuid4)
     user_id = Column(UUID, ForeignKey("users.id"))
     plan_id = Column(UUID, ForeignKey("plans.id"))
     start_date = Column(DateTime)
-    end_date = Column(DateTime)
-    
+    end_date = Column(DateTime)    
     user = relationship("User", back_populates="subscriptions")
     plan = relationship("Plan", back_populates="subscriptions")
+
+    def is_active(self):
+        """
+        Verifies that the subscription is still active
+        """
+        return self.end_date > datetime.now(timezone.utc)
     
 
 class Template(Base):

@@ -4,7 +4,7 @@ from database.models import User, Plan
 from database.setup import SessionLocal
 from utils.response import respond_success
 from fastapi.responses import JSONResponse
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import and_
 from database.models import Subscription
 
@@ -17,22 +17,21 @@ async def get_user_details(user: User = Depends(get_current_user)):
         active_subscription = session.query(Subscription).filter(
             and_(
                 Subscription.user_id == user.id,
-                Subscription.end_date > datetime.utcnow()
+                Subscription.end_date > datetime.now(timezone.utc)
             )
         ).first()
+        free_plan = session.query(Plan).filter(Plan.title.ilike("%free%")).first()
 
         if active_subscription:
-            plan = active_subscription.plan
+            plan: Plan | None = active_subscription.plan
         else:
-            plan = session.query(Plan).filter_by(id=user.plan_id).first()
+            plan = free_plan
         
-        session.close()
-
         res = {
             "id": str(user.id),
             "name": user.name,
             "email": user.email,
-            "plan": plan.title if plan else "Free Plan",
+            "plan": plan.title,
             "has_valid_subscription": active_subscription is not None,
             "is_active": user.is_active,
         }

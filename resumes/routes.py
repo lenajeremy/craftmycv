@@ -1,22 +1,24 @@
+"""
+Contains all the routes for resume
+"""
+import os
+from datetime import datetime, timezone
+import requests
 from fastapi import APIRouter
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
+
+
 from database import schemas
 from database.models import Resume, Template
 from database.setup import SessionLocal
 from utils.response import respond_error, respond_success
-from sqlalchemy.exc import SQLAlchemyError
 from .utils import upload_file_to_firebase, get_resume_buffer, convert_file_url_to_byes
-import io, os, tempfile
-from docx2pdf import convert
-from pdf2image import convert_from_path
-from datetime import datetime, timezone
-
 
 resumesrouter = APIRouter(
     prefix="/resumes",
     tags=["resumes"]
 )
-
 
 @resumesrouter.get('/user/{user_id}', response_class=JSONResponse)
 def get_user_resumes(user_id: str):
@@ -25,7 +27,10 @@ def get_user_resumes(user_id: str):
     """
     session = SessionLocal()
     try:
-        resumes = session.query(Resume).filter_by(owner_id=user_id).order_by(Resume.updated_at.desc()).all()
+        resumes = session.query(Resume)\
+            .filter_by(owner_id=user_id)\
+            .order_by(Resume.updated_at.desc())\
+            .all()
         formatted_resumes = [{
             "id": resume.id, 
             "name": resume.name, 
@@ -188,12 +193,11 @@ async def preview_resume(resume_id: str):
         resume.last_preview_date = datetime.now(timezone.utc)     
 
     preview_url = f"https://docs.google.com/viewer?url={docx_url}"
-
     session.commit()
     session.close()
 
     return respond_success({ "resume_preview_url": preview_url }, "Retrieved resume image")
-    
+
 
 @resumesrouter.get("/{resume_id}/download/{doc_type}", response_class=JSONResponse)
 async def download_resume(resume_id: str, doc_type: str):
@@ -201,8 +205,10 @@ async def download_resume(resume_id: str, doc_type: str):
     resume = session.query(Resume).filter_by(id=resume_id).first()
     file_url = resume.pdf_url if doc_type == 'pdf' else resume.docx_url
 
-    # TODO: before doing anything, I have to check the plan the user is currently on, 
-    # and check how many times they've downloaded the resume
+    """
+    TODO: Before doing anything, I have to check the plan the user is currently on,
+    and check how many times they've downloaded the resume
+    """
 
     if resume is None:
         return JSONResponse(respond_error(f"Resume with ID: {resume_id} not found"), status_code=404)
@@ -219,13 +225,12 @@ async def download_resume(resume_id: str, doc_type: str):
 
     if doc_type == "pdf":
         if not pdf_url or (resume.last_download_date is not None and resume.last_download_date < resume.resume_data_updated_at):
-            import requests
             print("generating pdf from docx")
             res = requests.post(url='https://api.pdf.co/v1/pdf/convert/from/doc', data={
                 "url": resume.docx_url, 
                 "name": f"{resume.first_name} {resume.last_name}'s Resume.pdf", 
                 "async": False
-            }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]})
+            }, headers={"X-Api-Key": os.environ["PDFCO_API_KEY"]}, timeout=60)
 
             print(res)
 
@@ -246,10 +251,7 @@ async def download_resume(resume_id: str, doc_type: str):
     session.commit()
     session.refresh(resume)
     session.close()
-    return respond_success({"file_url": file_url}, "Download complete")
-
-        
-
+    return respond_success({"file_url": file_url}, "Download complete")        
 
 @resumesrouter.post("/ai/generate", response_class=JSONResponse)
 def generate_resume_ai(request: schemas.Resume):

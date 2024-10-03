@@ -13,7 +13,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 480
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440
 
 authrouter = APIRouter(prefix="/auth",tags=["auth"])
 
