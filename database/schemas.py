@@ -24,7 +24,7 @@ class Education(BaseModel):
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     course_studied: Optional[str] = None
-    grade: Optional[str] = None
+    gpa: Optional[str] = None
 
 class Experience(BaseModel):
     id: str
